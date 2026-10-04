@@ -17,22 +17,44 @@ The browser benchmark uses a 1-second warm-up followed by a 10-second recording 
 
 ## 2. Browser full-frame performance
 
-The final browser stress test used **5,000 enemies, 100 towers, and 1,000 projectiles**, with all optimization toggles enabled.
+The latest browser stress test used **5,000 enemies, 100 towers, and 1,000 projectiles**, with all optimization toggles enabled. In this run, it averaged **120 FPS**.
 
 | Configuration | Enemies | Towers | Projectiles | Average FPS | Frames at 45+ FPS | Frames over 33.4 ms | p95 frame time (ms) | Simulation (ms) | Render (ms) | Result |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| All optimizations enabled (final, after browser fix) | 5,000 | 100 | 1,000 | 71.3 | 99.9% | 0.1% | 9.2 | 0.79 | 0.69 | **PASS** |
+| All optimizations enabled (latest run) | 5,000 | 100 | 1,000 | 120.0 | 100.0% | 0.0% | 9.3 | 0.74 | 0.64 | **PASS** |
 
-The final result meets both benchmark criteria: 99.9% of frames were at 45 FPS or higher, and 0.1% exceeded 33.4 ms.
+The latest result meets both benchmark criteria: 100.0% of frames were at 45 FPS or higher, and 0.0% exceeded 33.4 ms. Browser performance can vary between runs; this latest run supersedes the earlier 71.3 FPS stress-test reading for the current results table.
 
 ### Breaking-point testing
 
-Breaking-point testing has **not yet been measured reliably** after the browser frame-rate issue was corrected. No maximum passing load or first failing load is claimed here. To complete this test, increase one workload dimension at a time under the corrected browser setup and record both the highest passing load and the first failing load.
+Breaking-point testing was performed by increasing workload in steps. The initial configuration (all optimizations disabled) passed through 3,000 enemies / 75 towers / 600 projectiles and failed at 5,000 / 100 / 1,000. The optimized configuration passed all tested loads through the assignment target of 5,000 / 100 / 1,000. No optimized failure was reached, so do not claim a maximum passing load beyond the highest tested workload.
 
-| Configuration | Highest passing load | First failing load |
+| Configuration | Highest passing load (enemies / towers / projectiles) | First failing load (enemies / towers / projectiles) |
 |---|---|---|
-| Initial (all optimizations disabled) | Not measured after browser fix | Not measured after browser fix |
-| All optimizations enabled | Not measured after browser fix | Not measured after browser fix |
+| Initial (all optimizations disabled) | 3,000 / 75 / 600 | 5,000 / 100 / 1,000 |
+| All optimizations enabled | 5,000 / 100 / 1,000 (highest tested) | Not reached; testing stopped after target passed |
+
+#### Initial configuration — workload progression
+
+| Enemies | Towers | Projectiles | Average FPS | Frames at 45+ FPS | Frames over 33.4 ms | p95 frame time (ms) | Simulation (ms) | Render (ms) | Result |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 500 | 25 | 100 | 120.0 | 100.0% | 0.0% | 9.3 | 0.37 | 0.93 | **PASS** |
+| 1,000 | 25 | 200 | 44.1 | 99.8% | 0.2% | 9.2 | 0.59 | 1.33 | **PASS** |
+| 2,000 | 50 | 400 | 120.0 | 100.0% | 0.0% | 9.3 | 1.74 | 2.52 | **PASS** |
+| 3,000 | 75 | 600 | 55.2 | 99.3% | 0.4% | 16.6 | 4.42 | 3.44 | **PASS** |
+| 5,000 | 100 | 1,000 | 4.7 | 0.0% | 100.0% | 99.9 | 79.35 | 7.91 | **FAIL** |
+
+#### All optimizations enabled — workload progression
+
+| Enemies | Towers | Projectiles | Average FPS | Frames at 45+ FPS | Frames over 33.4 ms | p95 frame time (ms) | Simulation (ms) | Render (ms) | Result |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 500 | 25 | 102 | 120.0 | 100.0% | 0.0% | 9.3 | 0.11 | 0.16 | **PASS** |
+| 1,000 | 25 | 200 | 93.1 | 99.9% | 0.1% | 9.0 | 0.15 | 0.21 | **PASS** |
+| 2,000 | 50 | 400 | 96.1 | 99.9% | 0.1% | 9.0 | 0.36 | 0.51 | **PASS** |
+| 3,000 | 75 | 600 | 92.5 | 99.9% | 0.1% | 8.9 | 0.50 | 0.57 | **PASS** |
+| 5,000 | 100 | 1,000 | 120.0 | 100.0% | 0.0% | 9.3 | 0.74 | 0.64 | **PASS** |
+
+**Comparison note:** FPS readings are not monotonic as workload rises, likely due to browser/display scheduling and measurement variability. Use the stated pass/fail criteria and workload details rather than interpreting FPS alone as a perfectly linear scaling curve. The 500-load projectile counts differ slightly (100 initial vs. 102 optimized), so that row is not an exact like-for-like comparison.
 
 ## 3. Simulation-only performance (`npm run bench`)
 
@@ -72,9 +94,9 @@ Heap usage fluctuated during the sample, consistent with garbage collection. Thi
 |---|---|---|
 | `npm run bench` | **PASS** | Benchmark output generated; both bot scenarios completed. |
 | Simulation performance | **PASS** | Final configuration averaged 2.08 ms/tick. |
-| Browser full-frame stress benchmark | **PASS** | 71.3 average FPS; 99.9% of frames at 45+ FPS. |
+| Browser full-frame stress benchmark | **PASS** | Latest target-load run: 120.0 average FPS; 100.0% of frames at 45+ FPS. |
 | Browser frame-loop sanity check | **PASS** | Approximately 120 FPS after Chrome Energy Saver was disabled. This is a sanity check, not the stress-test FPS. |
-| Breaking-point testing | **PENDING** | Must be rerun in the corrected browser environment. |
+| Breaking-point testing | **PARTIALLY COMPLETE** | Initial config first failed at 5,000 / 100 / 1,000; all-optimizations config passed the target load, and no higher optimized failure was tested. |
 | Production build | **PASS in an earlier local run; not rerun successfully in the review environment** | The earlier `npm run build` completed successfully with Vite 5.4.21. In the review environment, dependency installation timed out and Vite was unavailable. Re-run `npm ci` followed by `npm run build` before submission if the source has changed since that successful build. |
 | Deployment | **Not independently verified during this benchmark run** | Live demo URL: <https://bastion-tower-defense.onrender.com/>. A URL being available does not by itself verify the deployed build's current behavior. |
 
@@ -88,8 +110,8 @@ npm run build
 npm run bench
 ```
 
-For the browser stress test, open the app in Chrome, disable Chrome Energy Saver, enable all optimization toggles, set the workload to 5,000 enemies, 100 towers, and 1,000 projectiles, then record the in-game performance panel after its warm-up.
+For browser stress and breaking-point tests, open the app in Chrome, disable Chrome Energy Saver, keep the browser/window size consistent, use a 1-second warm-up and 10-second recording, and record the in-game performance panel for each workload and toggle configuration.
 
 ## Conclusion
 
-The recorded simulation benchmark and final browser stress benchmark passed their stated criteria. The simulation averaged 2.08 ms per tick, and the browser stress test averaged 71.3 FPS with 99.9% of frames at 45 FPS or higher. Breaking-point testing remains pending. The earlier browser toggle readings are excluded from optimization comparisons because they were collected in an inconsistent browser frame-rate environment.
+The recorded simulation benchmark and latest browser stress benchmark passed their stated criteria. The simulation averaged 2.08 ms per tick, and the latest browser stress test averaged 120.0 FPS with 100.0% of frames at 45 FPS or higher at 5,000 enemies / 100 towers / 1,000 projectiles. Breaking-point testing is complete for the initial configuration and partially complete for the optimized configuration: the initial setup failed at the target load, while the optimized setup passed it. The optimized first failing load remains unknown because higher loads were not tested.
