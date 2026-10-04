@@ -1,129 +1,255 @@
-# Bastion, a browser tower defense
+# Bastion Tower Defense
 
-Hold the keep for 50 waves. Build towers on the grass, upgrade the ones that work, sell the ones that do not.
+A browser-based tower defense game built with plain JavaScript ES
+modules, WebGL2, Canvas2D, and Vite. Defend the keep through 50
+increasingly difficult waves by placing, upgrading, and selling towers.
 
-No backend, no external services, no runtime dependencies. Plain JavaScript (ES modules), WebGL2 and Canvas2D, bundled with Vite.
+- **Live demo:** <https://bastion-tower-defense.onrender.com/>
+- **Source code:** <https://github.com/Vanika-08/bastion-tower-defense>
 
-## Run it
+## Features
 
-```bash
-npm install
-npm run dev        # http://localhost:5173
-npm run build      # production build in dist/
-npm run preview    # serve the build
-npm run bench      # headless simulation benchmark + 50 wave bot run (node 18+)
+- 50 progressive waves with five enemy types: Grunt, Runner, Brute,
+  Swarm, and Warlord bosses.
+- Four tower types, each with four upgrade levels: Gunner, Cannon,
+  Frost, and Sniper.
+- Tower placement, upgrades, selling with a 70% refund, targeting modes,
+  and wave-call bonuses.
+- Pause, 1×/2×/3× speed, restart, camera pan/zoom, and a live
+  performance panel.
+- Fixed-timestep simulation, pooled entity storage, spatial-grid
+  queries, and an instanced WebGL2 renderer.
+- Headless simulation benchmarks and automated bot runs for balance and
+  performance checks.
+
+## Run locally
+
+**Requirements:** Node.js 18 or newer and npm.
+
+``` bash
+npm ci
+npm run dev
 ```
 
-Deploy: push to GitHub and import into Vercel or Netlify. Both detect Vite. Build command `npm run build`, output folder `dist`. A `netlify.toml` is included.
+Vite prints the local development URL, usually `http://localhost:5173`.
 
-## How to play
+Useful commands:
 
-| Input | Action |
-| --- | --- |
-| `1` to `4` or click a card | Pick Gunner, Cannon, Frost, Sniper |
-| Left click on grass | Build (stays in build mode while you can afford more) |
-| Right click or `Esc` | Stop building, clear selection |
-| Click a tower | Inspect it |
-| `U` / `X` / `T` | Upgrade / sell (70% refund) / cycle targeting |
-| `N` | Start or call the next wave early (bonus gold) |
-| `Space` / `F` / `R` | Pause / cycle speed 1x 2x 3x / restart |
-| Scroll, drag, WASD or arrows | Zoom and pan. `0` resets the view |
-| `P` | Performance panel |
+``` bash
+npm run build    # Production build in dist/
+npm run preview  # Serve the production build locally
+npm run bench    # Headless simulation benchmark and 50-wave bot scenarios
+```
 
-## Game design decisions
+## Controls
 
-**Towers** (each has 4 levels):
+| Input                                    | Action                                           |
+|------------------------------------------|--------------------------------------------------|
+| `1`–`4` or click a tower card            | Select Gunner, Cannon, Frost, or Sniper          |
+| Left-click grass                         | Place a tower                                    |
+| Right-click or `Esc`                     | Cancel build mode or clear selection             |
+| Click a placed tower                     | Inspect it                                       |
+| `U`                                      | Upgrade selected tower                           |
+| `X`                                      | Sell selected tower (70% refund)                 |
+| `T`                                      | Cycle targeting mode                             |
+| `N`                                      | Start the next wave or call it early for a bonus |
+| `Space`                                  | Pause/resume                                     |
+| `F`                                      | Cycle 1×, 2×, and 3× speed                       |
+| `R`                                      | Restart                                          |
+| Mouse wheel, drag, `WASD`, or arrow keys | Zoom and pan                                     |
+| `0`                                      | Reset camera view                                |
+| `P`                                      | Open the performance panel                       |
 
-| Tower | Role | Why it exists |
-| --- | --- | --- |
-| Gunner | Fast single target, cheap | Early game backbone. Flat armor cuts each small bullet, so it falls off late |
-| Cannon | Lobbed shell, area blast, leads its target | Answers Swarm groups. Shells fly over enemies and only hit where they land |
-| Frost | Area slow (50%) plus chip damage | Force multiplier for every other tower |
-| Sniper | Huge range, ignores armor, targets the strongest | Answers Brutes and the Warlord boss |
+## Game design
 
-**Enemies**: Grunt (baseline), Runner (fast, fragile), Brute (slow, armored), Swarm (tiny, comes in packs of 20 to 110), Warlord (boss every 10 waves, heavy armor, costs 10 lives).
+### Towers
 
-**Difficulty curve**: HP scales by `1 + 0.16k + 0.0085k²` (k = wave − 1), so wave 50 enemies have roughly 29x the HP of wave 1. Armor grows by 1 every 8 waves. Group sizes grow linearly and spawn gaps shrink. New enemy types unlock at waves 3, 5 and 7, bosses arrive at 10, 20, 30, 40 and 50.
+| Tower  | Role                                    | Design intent                                                      |
+|--------|-----------------------------------------|--------------------------------------------------------------------|
+| Gunner | Cheap, fast single-target damage        | Reliable early-game defense, but small hits struggle against armor |
+| Cannon | Lobbed shell with area damage           | Handles groups; shells damage enemies around their landing point   |
+| Frost  | Area slow plus light damage             | Slows enemies to improve the effectiveness of other towers         |
+| Sniper | Long range, high damage, armor piercing | Deals with Brutes and Warlord bosses                               |
 
-**Economy**: kill rewards grow slowly (1.2% per wave), a clear bonus of `20 + 3 × wave`, and a bonus for calling waves early. Selling refunds 70%.
+Each tower has four levels.
 
-**Balance check**: `npm run bench` plays the full game headless with two bots. A bot that mixes tower types and upgrades wins all 50 waves. A bot that only builds Gunners dies on wave 20. So the curve rewards using the tower roles, which was the goal. The curve was tuned by sweeping the HP formula with these bots.
+### Enemies and difficulty
 
-**Two paths that merge** so the player has to split early defenses and then gets a strong choke point near the keep.
+- **Grunt:** Baseline enemy.
+- **Runner:** Fast and fragile.
+- **Brute:** Slower, with stronger armor.
+- **Swarm:** Small enemies that arrive in groups.
+- **Warlord:** Heavily armored boss that appears every ten waves and
+  costs ten lives if it escapes.
+
+Enemy HP scales with `1 + 0.16k + 0.0085k²`, where `k = wave - 1`. Armor
+increases every eight waves, group sizes grow, and spawn gaps shrink.
+Additional enemy types unlock on waves 3, 5, and 7; bosses appear on
+waves 10, 20, 30, 40, and 50.
+
+Kill rewards increase by 1.2% per wave. Clearing a wave grants
+`20 + 3 × wave`, and calling a wave early grants a bonus. Selling a
+tower returns 70% of its cost.
+
+The map has two paths that merge, encouraging players to defend separate
+approaches early and build a stronger defense around the later choke
+point.
 
 ## Architecture
 
-```
+``` text
 src/
-  config.js            all tunable numbers (towers, enemies, map, limits)
-  map.js               tile grid, path geometry, distance-to-path field
-  waves.js             wave composition and scaling formulas
-  grid.js              uniform spatial hash (counting sort, no allocations)
-  sim.js               the whole simulation, no DOM, also runs in node
-  camera.js            pan / zoom, visible world rect
-  render/webgl.js      instanced WebGL2 renderer (final)
-  render/canvas.js     per-entity Canvas2D renderer (initial version, kept for comparison)
-  render/background.js map painted once into an offscreen canvas
-  perf.js              frame time ring buffer, 10 s benchmark recorder
-  ui.js                HUD, inspector, perf panel (DOM)
-  main.js              the single game loop, input, overlay
-bench/sim-bench.mjs    headless benchmark and balance bots
+  config.js             Tunable tower, enemy, map, and capacity values
+  map.js                Tile grid, path geometry, distance-to-path field
+  waves.js              Wave composition and scaling
+  grid.js               Uniform spatial hash and nearby-entity queries
+  sim.js                Simulation logic; independent of the DOM
+  camera.js             Pan/zoom and visible-world bounds
+  render/
+    webgl.js             Instanced WebGL2 entity renderer
+    canvas.js            Canvas2D renderer retained for comparison
+    background.js        Cached offscreen map rendering
+  perf.js                Frame-time buffer and benchmark recorder
+  ui.js                  HUD, tower inspector, and performance panel
+  main.js                Game loop, input, and overlays
+bench/
+  sim-bench.mjs           Headless benchmark and balance bots
 ```
 
-**State layout.** Each entity kind (enemies, towers, projectiles, effects) is a struct of arrays: one typed array per field (`x`, `y`, `hp`, ...) plus a free list of slot indices and a generation counter per slot. Projectiles store `(slot, generation)` of their target, so a reused slot is never mistaken for the old enemy. All arrays are allocated once at startup with fixed capacity (12k enemies, 8k projectiles, 6k effects), so nothing grows during a run.
+### Simulation model
 
-**One loop.** There is exactly one `requestAnimationFrame` callback. No entity owns a timer or an animation loop. Spawning, cooldowns and slows are counters stepped by the simulation.
+- A single `requestAnimationFrame` loop drives the game.
+- Simulation advances at a fixed 1/60-second timestep using an
+  accumulator; rendering interpolates between simulation states.
+- Catch-up work is capped at `2 × speed + 2` ticks per frame to prevent
+  overloaded frames from creating a runaway backlog.
+- Enemies, towers, projectiles, and effects use struct-of-arrays storage
+  backed by typed arrays, free lists, and generation counters. This
+  avoids frequent entity-object allocation and prevents projectiles from
+  accidentally following a reused target slot.
+- Entity storage is preallocated with capacities of 12,000 enemies,
+  8,000 projectiles, and 6,000 effects.
+- `sim.js` has no DOM dependency and emits events for kills, leaks,
+  waves, and victory, allowing the same simulation to run in Node.js for
+  headless benchmarks.
 
-**Fixed timestep.** The simulation always advances in 1/60 s ticks using an accumulator. A 144 Hz screen runs fewer ticks per frame, a 30 Hz screen runs two per frame, and the result is the same game. Rendering interpolates positions between the last two ticks, so movement stays smooth on high refresh displays. Catch-up is capped at `2 × speed + 2` ticks per frame so an overloaded frame cannot snowball. The perf panel has a frame cap (30 / 60 Hz) to show this live: the game moves at the same speed with either cap.
+### Rendering
 
-**Simulation order per tick.** spawn → move enemies → rebuild spatial grid → towers pick targets and fire → projectiles move and collide → effects → wave state.
+The game uses three stacked canvases:
 
-**Separation.** `sim.js` never touches the DOM. It reports events (`kill`, `leak`, `wave`, `won`) through one listener. That is what makes the headless benchmark and the bot runs possible.
+1.  **Cached background Canvas2D:** The map and scenery are drawn to an
+    offscreen canvas and reused.
+2.  **WebGL2 entities:** Towers, enemies, health bars, projectiles, and
+    effects are packed into a preallocated instance buffer and rendered
+    with instancing.
+3.  **Canvas2D overlay:** Build previews, range circles, floating
+    rewards, and pause/visual effects.
 
-## Rendering approach
+The DOM is reserved for the HUD and panels rather than individual game
+entities.
 
-Three stacked canvases:
+## Performance work
 
-1. **Background (2D).** The map, path, trees, rocks and the keep are painted once into an offscreen canvas at 2x resolution. Each frame only blits that image, and only when the camera moved.
-2. **Entities (WebGL2).** Every tower, enemy, health bar, projectile and effect is one instance in a single interleaved buffer (28 bytes: position, size, rotation, shape id, extra, packed RGBA). One `bufferSubData` and one `drawArraysInstanced` per frame. Shapes (circle, square, triangle, diamond, hexagon, ring, glow, bar) are drawn with signed distance functions in the fragment shader, with antialiasing from `fwidth`. No textures, no asset loading.
-3. **Overlay (2D).** Build grid, ghost tower, range circles, floating gold numbers, damage vignette, pause screen. These are few and change every frame.
+### Main bottlenecks identified
 
-The DOM is only used for the HUD and panels.
+1.  **Projectile collision:** Checking every projectile against every
+    enemy scales with projectiles × enemies.
+2.  **Tower targeting:** Repeatedly scanning all enemies and
+    allocating/sorting target lists adds CPU work and garbage
+    collection.
+3.  **Per-entity Canvas2D rendering:** Many path, fill, stroke, and
+    color operations become expensive at high entity counts.
+4.  **Off-screen entities:** Processing objects outside the camera view
+    wastes rendering work.
+5.  **Frequent HUD updates:** Writing UI values every frame creates
+    unnecessary DOM work.
 
-## Major bottlenecks found
+### Optimizations implemented
 
-Measured with the stress scenario (5,000 enemies, 100 towers, 1,000+ projectiles):
+| Optimization          | Implementation                                                                                                                                           |
+|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Spatial hash          | 32-pixel cells; a counting-sort-style rebuild into flat `Int32Array` storage. Collision, splash, and targeting queries inspect nearby cells.             |
+| Throttled retargeting | Towers keep a valid target and re-scan about 10 times per second instead of every simulation tick. Target selection avoids temporary arrays and sorting. |
+| Instanced WebGL2      | Entity visuals are batched into a preallocated buffer and drawn with instancing.                                                                         |
+| Viewport culling      | Entities outside the camera view plus a margin are skipped before being added to the render buffer.                                                      |
+| HUD throttling        | HUD refreshes at 10 Hz and only updates text when values change.                                                                                         |
+| Always-on foundations | Struct-of-arrays storage, free lists, cached background, fixed timestep, and a catch-up cap.                                                             |
 
-1. **Projectile collision, O(projectiles × enemies).** Every bullet checked every enemy, every tick: about 5 million distance checks per tick. This was the biggest cost.
-2. **Tower targeting, O(towers × enemies) with allocation.** Each tower built a new array of enemies in range and sorted it, every tick. This also created garbage, which shows up as GC pauses.
-3. **Canvas2D draw calls.** One `beginPath/arc/fill/stroke` per enemy plus two `fillRect` for its health bar plus a new color string per entity. Thousands of state changes per frame. CPU bound in the browser's 2D backend.
-4. **Drawing off-screen objects.** When zoomed in, the renderer still processed every entity.
-5. **DOM writes.** Rewriting HUD `innerHTML` every frame forces style and layout work.
+The performance panel (`P`) can record a 10-second browser sample after
+a 1-second warm-up. It reports FPS, frame-time percentiles, the share of
+frames at 45+ FPS, frames over 33 ms, simulation/render time, entity
+counts, and heap information where the browser exposes it. The target is
+at least 95% of frames at 45+ FPS and fewer than 5% of frames over 33
+ms.
 
-## Optimizations
+## Benchmark results
 
-| # | Optimization | What changed | Toggle in perf panel |
-| --- | --- | --- | --- |
-| 1 | Spatial hash grid | 32 px cells, rebuilt each tick with a counting sort into flat `Int32Array`s. Collision, splash and targeting only look at nearby cells | Spatial hash grid |
-| 2 | Throttled retargeting | Towers keep a valid target and re-scan 10 times a second instead of 60. Best target is tracked in one pass, no array, no sort | Throttled retargeting |
-| 3 | Instanced WebGL renderer | All entities in one draw call from one preallocated buffer | WebGL instanced renderer |
-| 4 | Viewport culling | Entities outside the camera rect (plus margin) are skipped before they are written to the instance buffer | Viewport culling |
-| 5 | HUD throttling | HUD updates at 10 Hz and only writes `textContent` when a value changed | Throttled HUD updates |
+Results depend on hardware, browser, power settings, and scene
+composition. See [NUMBERS.md](./NUMBERS.md) for the detailed environment
+notes, tables, and limitations.
 
-Always on (architecture, not toggled): struct of arrays storage, object pools with free lists, zero allocations in the hot loop, cached background, fixed timestep, catch-up cap.
+### Headless simulation benchmark
 
-"Initial version" in the perf panel switches all five toggles off. That recreates the hot paths of the first implementation inside the same build, so the before and after can be compared live on the same machine with the same scene.
+Stress scenario: 5,000 enemies and 100 towers, with at least 1,000
+projectiles.
 
-## How performance was measured
+| Configuration                               | Average ms/tick | P95 ms/tick | Speedup vs. naive |
+|---------------------------------------------|----------------:|------------:|------------------:|
+| Naive: no spatial grid, retarget every tick |           69.87 |       78.97 |              1.0× |
+| Throttled retarget only                     |           43.09 |       55.52 |              1.6× |
+| Spatial grid only                           |            4.09 |        4.90 |             17.1× |
+| Spatial grid + throttled retargeting        |            2.08 |        3.04 |             33.6× |
 
-**In the browser** (perf panel, `P`): a live frame time graph (green under 22 ms, yellow under 33 ms, red above), FPS, simulation ms, render ms, entity counts, drawn instances and JS heap (Chrome). "Record 10 s" skips 1 s of warm up, then records every frame delta from `requestAnimationFrame` into a fixed buffer and reports average FPS, the share of frames at 45+ FPS (frame time ≤ 22.2 ms), the share over 33 ms, p50 / p95 / p99, average sim and render time, and heap at start and end. It marks the run PASS when ≥ 95% of frames are at 45+ FPS and < 5% exceed 33 ms. "Copy table row" puts a markdown row on the clipboard for NUMBERS.md.
+### Browser stress test
 
-**Headless** (`npm run bench`): runs the same `sim.js` in node and times 300 ticks of the stress scenario for each optimization combo. It also plays all 50 waves with a bot and samples heap every 5 waves to confirm memory stays flat.
+With all optimizations enabled, the recorded run used 5,000 enemies, 100
+towers, and 1,000 projectiles.
 
-**Memory**: all entity storage is preallocated, so heap only moves with UI strings and GC sawtooth. Over a full 50 wave bot run, heap stayed between about 5 and 11 MB with no upward trend.
+| Metric                  |   Result |
+|-------------------------|---------:|
+| Average FPS             |     71.3 |
+| Frames at 45+ FPS       |    99.9% |
+| Frames over 33 ms       |     0.1% |
+| P95 frame time          |   9.2 ms |
+| Average simulation time |  0.79 ms |
+| Average render time     |  0.69 ms |
+| Result                  | **PASS** |
 
-Results are in [NUMBERS.md](./NUMBERS.md).
+An independent browser frame-loop sanity check measured approximately
+120 FPS with Chrome Energy Saver disabled. That is a display/browser
+check, not the stress-test FPS result.
 
-## Things I would do next
+**Comparison limitation:** Earlier browser toggle measurements were
+recorded while the browser itself was limited to about 30 FPS, so they
+are not a fair before/after comparison. The detailed numbers file labels
+those rows as diagnostic only. A reliable browser breaking-point
+comparison has not yet been measured after correcting the browser
+frame-rate issue.
 
-Move the simulation to a Web Worker with a `SharedArrayBuffer` so heavy ticks never block input, sound effects, more maps, and a tower that chains between enemies.
+### Balance and memory checks
+
+- Mixed tower types with upgrades: bot won wave 50 with 30 lives
+  remaining; score 377,057 and 125 towers.
+- Gunner-only bot: lost on wave 20 with 0 lives; score 50,340 and 51
+  towers.
+- Heap samples during the mixed-tower run ranged from approximately 5.3
+  MB to 8.8 MB at five-wave intervals, with normal garbage-collection
+  fluctuations and no sustained upward trend in that sample.
+
+## Deployment
+
+The live build is hosted at
+[bastion-tower-defense.onrender.com](https://bastion-tower-defense.onrender.com/).
+
+For another static host, build with `npm run build` and publish the
+`dist/` directory. Configure the host to use `npm run build` as the
+build command and `dist` as the publish/output directory.
+
+## Possible next steps
+
+- Move simulation work to a Web Worker to reduce main-thread contention
+  at extreme loads.
+- Add sound effects, more maps, and additional tower interactions such
+  as chain attacks.
+- Repeat browser breaking-point tests on a documented machine/browser
+  setup and add automated browser regression tests.
