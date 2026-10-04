@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Bastion, a tower defense game</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='4' y='8' width='24' height='20' fill='%2358615d'/><rect x='4' y='4' width='5' height='6' fill='%236f7a75'/><rect x='13' y='4' width='6' height='6' fill='%236f7a75'/><rect x='23' y='4' width='5' height='6' fill='%236f7a75'/><rect x='13' y='18' width='6' height='10' fill='%233a2a1e'/></svg>" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="bg"></canvas>
+    <canvas id="gl"></canvas>
+    <canvas id="ov"></canvas>
+
+    <header id="hud">
+      <div class="brand">Bastion</div>
+      <div class="stat" title="Lives. Lose them all and the keep falls.">
+        <svg viewBox="0 0 16 16" class="ic"><path d="M8 14 2 8a3.5 3.5 0 0 1 6-4 3.5 3.5 0 0 1 6 4z" fill="#ff6f5e"/></svg>
+        <b id="lives">30</b>
+      </div>
+      <div class="stat" title="Gold">
+        <svg viewBox="0 0 16 16" class="ic"><circle cx="8" cy="8" r="6" fill="#e8b54a"/><circle cx="8" cy="8" r="3.5" fill="none" stroke="#a87a1f" stroke-width="1.4"/></svg>
+        <b id="gold">220</b>
+      </div>
+      <div class="stat"><span class="muted">Wave</span> <b id="wave">0</b><span class="muted">/50</span></div>
+      <div class="stat"><span class="muted">Score</span> <b id="score">0</b></div>
+      <div class="spacer"></div>
+      <button id="btn-wave" class="primary">Start wave 1</button>
+      <div class="seg" id="speed" role="group" aria-label="Game speed">
+        <button data-speed="1" class="on">1x</button>
+        <button data-speed="2">2x</button>
+        <button data-speed="3">3x</button>
+      </div>
+      <button id="btn-pause">Pause</button>
+      <button id="btn-restart">Restart</button>
+      <button id="btn-perf" title="Performance panel (P)">Perf</button>
+    </header>
+
+    <footer id="dock">
+      <div id="towers"></div>
+      <div id="next" class="next"></div>
+    </footer>
+
+    <aside id="inspect" hidden></aside>
+
+    <aside id="perf" hidden>
+      <div class="perf-head">
+        <strong>Performance</strong>
+        <button id="perf-close" class="ghost" aria-label="Close">×</button>
+      </div>
+      <canvas id="graph" width="280" height="64"></canvas>
+      <div id="perf-stats" class="perf-stats"></div>
+
+      <div class="perf-group">
+        <div class="perf-title">Optimizations</div>
+        <label><input type="checkbox" data-opt="webgl" checked /> WebGL instanced renderer</label>
+        <label><input type="checkbox" data-opt="spatialGrid" checked /> Spatial hash grid</label>
+        <label><input type="checkbox" data-opt="culling" checked /> Viewport culling</label>
+        <label><input type="checkbox" data-opt="throttleTarget" checked /> Throttled retargeting</label>
+        <label><input type="checkbox" data-opt="hudThrottle" checked /> Throttled HUD updates</label>
+        <div class="row">
+          <button id="preset-naive">Initial version</button>
+          <button id="preset-opt">All optimizations</button>
+        </div>
+        <label class="inline">Frame cap
+          <select id="fps-cap">
+            <option value="0">Display rate</option>
+            <option value="30">30 Hz</option>
+            <option value="60">60 Hz</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="perf-group">
+        <div class="perf-title">Stress test</div>
+        <div class="grid3">
+          <label>Enemies<input id="st-e" type="number" value="5000" min="0" max="11000" step="500" /></label>
+          <label>Towers<input id="st-t" type="number" value="100" min="0" max="400" step="10" /></label>
+          <label>Shots<input id="st-p" type="number" value="1000" min="0" max="7000" step="100" /></label>
+        </div>
+        <div class="row">
+          <button id="st-start" class="primary">Start stress test</button>
+          <button id="st-exit">Back to game</button>
+        </div>
+      </div>
+
+      <div class="perf-group">
+        <div class="perf-title">Benchmark</div>
+        <div class="row">
+          <button id="bench-run">Record 10 s</button>
+          <button id="bench-copy" disabled>Copy table row</button>
+        </div>
+        <pre id="bench-out">Start a stress test, then record. Results land here.</pre>
+      </div>
+    </aside>
+
+    <div id="banner" aria-live="polite"></div>
+    <div id="toast" aria-live="polite"></div>
+
+    <section id="screen-start" class="screen">
+      <div class="card">
+        <h1>Bastion</h1>
+        <p class="lede">Hold the keep for fifty waves. Build on the grass, upgrade what works, sell what does not.</p>
+        <ul class="howto">
+          <li><kbd>1</kbd>–<kbd>4</kbd> pick a tower, click grass to build, right click to stop</li>
+          <li>Click a tower to upgrade <kbd>U</kbd>, sell <kbd>X</kbd> or change its target <kbd>T</kbd></li>
+          <li><kbd>Space</kbd> pause, <kbd>F</kbd> speed, <kbd>N</kbd> next wave, <kbd>R</kbd> restart</li>
+          <li>Scroll to zoom, drag to look around</li>
+        </ul>
+        <div class="row">
+          <button id="play" class="primary big">Play</button>
+          <button id="play-stress" class="big">Stress test</button>
+        </div>
+        <p class="best" id="best"></p>
+      </div>
+    </section>
+
+    <section id="screen-end" class="screen" hidden>
+      <div class="card">
+        <h1 id="end-title">The keep has fallen</h1>
+        <p class="lede" id="end-text"></p>
+        <div class="row">
+          <button id="again" class="primary big">Play again</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
